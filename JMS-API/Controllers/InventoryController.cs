@@ -40,7 +40,7 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        [Route("GetInventoryList")]
+        [Route("InventoryDetails")]
         public async Task<IActionResult> GetInventoryList()
         {
             IActionResult response = Unauthorized();
@@ -49,8 +49,8 @@ namespace API.Controllers
             return response;
         }
 
-        [HttpGet]
-        [Route("GetInventoryById")]
+        [HttpGet("{id}")]
+        //[Route("GetInventoryById")]
         public async Task<IActionResult> GetInventoryById(int id)
         {
             IActionResult response = Unauthorized();

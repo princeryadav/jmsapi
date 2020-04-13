@@ -25,13 +25,43 @@ namespace BLL.Repository
             try
             {
                 //string result = "";
+                string NewJobNo = "";
+                List<JobMasterDto> jobMaster = new List<JobMasterDto>();
+                List<CompanyMasterDto> compMaster = new List<CompanyMasterDto>();
                 DataTable dtJob = _conn.ToDataTable(job.diamondDetail);
                 dtJob.Columns.Remove("DiaId");
                 dtJob.Columns.Remove("JobId");
 
+                string SqlQuery = "SELECT TOP 1 * FROM JobMaster WHERE CompanyId =" + job.CompanyId + " ORDER BY JobNo DESC";
+                using (var connection = new SqlConnection(_conn.strConnectionString()))
+                {
+                    await connection.OpenAsync();
+                    jobMaster = connection.Query<JobMasterDto>(SqlQuery).AsList();
+                }
+
+
+                if (jobMaster.Count > 0)
+                {
+                    string[] jobno2 = jobMaster[0].JobNo.Split('-');
+                    int id = Convert.ToInt32(jobno2[1]);
+                    string idincrement = (id + 1).ToString();
+                    NewJobNo = jobno2[0] + "-" + idincrement;
+                }
+                else
+                {
+
+                    string SqlQuery2 = "SELECT * FROM CompanyMaster WHERE CompanyId =" + job.CompanyId;
+                    using (var connection = new SqlConnection(_conn.strConnectionString()))
+                    {
+                        await connection.OpenAsync();
+                        compMaster = connection.Query<CompanyMasterDto>(SqlQuery2).AsList();
+                    }
+                    NewJobNo = compMaster[0].CompanyCode + "-1";
+                }
+
                 object stat = _conn.ExecuteProcedure("InsertUpdateJobMaster", new SqlParameter("JobId", job.JobId),
                                                                                     new SqlParameter("CompanyId", job.CompanyId),
-                                                                                    new SqlParameter("JobNo", job.JobNo),
+                                                                                    new SqlParameter("JobNo", NewJobNo),
                                                                                     new SqlParameter("ClientJobNo", job.ClientJobNo),
                                                                                     new SqlParameter("JobType", job.JobType),
                                                                                     new SqlParameter("IssuedDate", job.IssuedDate),
@@ -94,20 +124,20 @@ namespace BLL.Repository
             SingleReturnResult<JobMasterDto> job = new SingleReturnResult<JobMasterDto>();
             try
             {
-                DataSet dsJob = _conn.ExecuteProcedureForDataSet("GetJobById",new SqlParameter("JobId",Id));
+                DataSet dsJob = _conn.ExecuteProcedureForDataSet("GetJobById", new SqlParameter("JobId", Id));
                 List<JobMasterDto> jobDetail = new List<JobMasterDto>();
-                
+
                 jobDetail = _conn.ConvertDataTable<JobMasterDto>(dsJob.Tables[0]);
                 if (dsJob.Tables.Count > 1)
                 {
                     jobDetail[0].diamondDetail = new List<DiamondDetailDto>();
-                    jobDetail[0].diamondDetail = _conn.ConvertDataTable<DiamondDetailDto>(dsJob.Tables[1]); 
+                    jobDetail[0].diamondDetail = _conn.ConvertDataTable<DiamondDetailDto>(dsJob.Tables[1]);
                 }
-              
-                   job.result = jobDetail[0];
-                    job.Flag = ApplicationConstants.successFlag;
-                    job.message = "Data Fetched Successfully!"; 
-                
+
+                job.result = jobDetail[0];
+                job.Flag = ApplicationConstants.successFlag;
+                job.message = "Data Fetched Successfully!";
+
                 return job;
             }
             catch (Exception ex)
